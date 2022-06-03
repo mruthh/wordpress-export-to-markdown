@@ -73,27 +73,41 @@ async function writeMarkdownFilesPromise(posts, config ) {
 }
 
 async function loadMarkdownFilePromise(post) {
-	let output = '---\n';
+	let output = '';
 
-	Object.entries(post.frontmatter).forEach(([key, value]) => {
-		let outputValue;
-		if (Array.isArray(value)) {
-			if (value.length > 0) {
-				// array of one or more strings
-				outputValue = value.reduce((list, item) => `${list}\n  - "${item}"`, '');
+	const loadSection = function (section) {
+		output += '---\n';
+	
+		Object.entries(section).forEach(([key, value]) => {
+			let outputValue;
+			if (Array.isArray(value)) {
+				if (value.length > 0) {
+					// array of one or more strings
+					outputValue = value.reduce((list, item) => `${list}\n  - "${item}"`, '');
+				}
+			} else {
+				// single string value
+				const escapedValue = (value || '').replace(/"/g, '\\"');
+				outputValue = `"${escapedValue}"`;
 			}
-		} else {
-			// single string value
-			const escapedValue = (value || '').replace(/"/g, '\\"');
-			outputValue = `"${escapedValue}"`;
-		}
 
-		if (outputValue !== undefined) {
-			output += `${key}: ${outputValue}\n`;
-		}
-	});
+			if (outputValue !== undefined) {
+				output += `${key}: ${outputValue}\n`;
+			}
+		});
+	}
+
+	loadSection(post.frontmatter)
 
 	output += `---\n\n${post.content}\n`;
+
+	if (!post.comments.length) return output
+
+	output += '---Comments---\n'
+	
+	for (const comment of post.comments) {
+		loadSection(comment)
+	}
 	return output;
 }
 

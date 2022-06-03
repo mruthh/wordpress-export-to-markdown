@@ -5,6 +5,7 @@ const xml2js = require('xml2js');
 const shared = require('./shared');
 const settings = require('./settings');
 const translator = require('./translator');
+const commentsParser = require('./comments-parser')
 
 async function parseFilePromise(config) {
 	console.log('\nParsing...');
@@ -71,6 +72,16 @@ function collectPosts(data, postTypes, config) {
 					categories: getCategories(post),
 					tags: getTags(post)
 				},
+				comments: commentsParser.getPostComments(post)
+					.map(comment => {
+						const ret = {
+							...comment,
+							content: translator.getPostContent(comment, turndownService, config)
+						}
+
+						delete ret.encoded
+						return ret
+					}),
 				content: translator.getPostContent(post, turndownService, config)
 			}));
 
